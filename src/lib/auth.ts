@@ -1,8 +1,47 @@
 import { getServerSession } from 'next-auth'
+import { getToken } from 'next-auth/jwt'
+import { cookies, headers } from 'next/headers'
 import { authOptions } from '@/lib/auth-options'
 
 export async function getSession() {
-  return getServerSession(authOptions)
+  // Try getServerSession first
+  const session = await getServerSession(authOptions)
+  if (session) return session
+
+  // Fallback: read JWT token directly from cookie (more reliable in App Router route handlers)
+  try {
+    const cookieStore = cookies()
+    const headersList = headers()
+
+    // Build a minimal request object for getToken
+    const req = {
+      headers: Object.fromEntries(headersList.entries()),
+      cookies: Object.fromEntries(
+        cookieStore.getAll().map((c) => [c.name, c.value])
+      ),
+    }
+
+    const token = await getToken({
+      req: req as any,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+
+    if (token) {
+      return {
+        user: {
+          id: token.id as string,
+          name: token.name,
+          email: token.email,
+          role: token.role as string,
+        },
+        expires: new Date(((token.exp as number) || 0) * 1000).toISOString(),
+      }
+    }
+  } catch (e) {
+    console.error('getToken fallback error:', e)
+  }
+
+  return null
 }
 
 export async function requireAuth() {
