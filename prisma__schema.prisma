@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          String    @default("lobbyist") // admin | lobbyist | viewer
+  avatar        String?
+  phone         String?
+  title         String?   // תפקיד
+  bio           String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  clients       UserClient[]
+  tasks         Task[]
+  aiRequests    AIRequest[]
+}
+
+model Client {
+  id            String    @id @default(cuid())
+  name          String
+  industry      String?   // תעשייה
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  description   String?
+  keywords      String?   // comma-separated keywords for scraping
+  status        String    @default("active") // active | inactive | archived
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  users         UserClient[]
+  tasks         Task[]
+  scrapedItems  ScrapedItem[]
+}
+
+model UserClient {
+  id        String   @id @default(cuid())
+  userId    String
+  clientId  String
+  role      String   @default("member") // lead | member
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientId])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  type        String    // summary | letter | strategy | research | general
+  status      String    @default("pending") // pending | in_progress | completed | archived
+  priority    String    @default("medium") // low | medium | high | urgent
+  dueDate     DateTime?
+  clientId    String
+  assigneeId  String?
+  aiGenerated Boolean   @default(false)
+  aiContent   String?   // AI-generated content for this task
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  assignee    User?     @relation(fields: [assigneeId], references: [id])
+}
+
+model ScrapedItem {
+  id          String    @id @default(cuid())
+  source      String    // knesset_committee | knesset_plenum | gov_decision | legislation
+  sourceUrl   String
+  title       String
+  content     String
+  summary     String?   // AI-generated summary
+  date        DateTime?
+  committee   String?   // שם הוועדה
+  relevance   Float?    // AI-scored relevance 0-1
+  clientId    String?
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  client      Client?   @relation(fields: [clientId], references: [id])
+
+  @@index([source])
+  @@index([clientId])
+}
+
+model AIRequest {
+  id          String    @id @default(cuid())
+  type        String    // summary | letter | strategy | analysis
+  prompt      String
+  response    String?
+  status      String    @default("pending") // pending | processing | completed | failed
+  userId      String
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+}
