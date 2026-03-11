@@ -3,7 +3,11 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 
+// Consistent secret used across all auth operations
+export const AUTH_SECRET = process.env.NEXTAUTH_SECRET || 'lobby-pro-dev-secret-key'
+
 export const authOptions: AuthOptions = {
+  secret: AUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: 'credentials',

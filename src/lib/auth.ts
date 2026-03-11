@@ -1,19 +1,18 @@
 import { getServerSession } from 'next-auth'
 import { getToken } from 'next-auth/jwt'
 import { cookies, headers } from 'next/headers'
-import { authOptions } from '@/lib/auth-options'
+import { authOptions, AUTH_SECRET } from '@/lib/auth-options'
 
 export async function getSession() {
   // Try getServerSession first
   const session = await getServerSession(authOptions)
   if (session) return session
 
-  // Fallback: read JWT token directly from cookie (more reliable in App Router route handlers)
+  // Fallback: read JWT token directly from cookie using the same secret
   try {
     const cookieStore = cookies()
     const headersList = headers()
 
-    // Build a minimal request object for getToken
     const req = {
       headers: Object.fromEntries(headersList.entries()),
       cookies: Object.fromEntries(
@@ -23,7 +22,7 @@ export async function getSession() {
 
     const token = await getToken({
       req: req as any,
-      secret: process.env.NEXTAUTH_SECRET,
+      secret: AUTH_SECRET,
     })
 
     if (token) {
