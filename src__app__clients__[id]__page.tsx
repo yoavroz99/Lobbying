@@ -24,6 +24,17 @@ export default function ClientDetailPage() {
   const [scraped, setScraped] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showTaskForm, setShowTaskForm] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    industry: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    description: '',
+    keywords: '',
+    status: 'active',
+  })
   const [taskForm, setTaskForm] = useState({
     title: '',
     description: '',
@@ -96,6 +107,40 @@ export default function ClientDetailPage() {
     setTasks(await res.json())
   }
 
+  function startEditing() {
+    setEditForm({
+      name: client.name || '',
+      industry: client.industry || '',
+      contactName: client.contactName || '',
+      contactEmail: client.contactEmail || '',
+      contactPhone: client.contactPhone || '',
+      description: client.description || '',
+      keywords: client.keywords || '',
+      status: client.status || 'active',
+    })
+    setEditing(true)
+  }
+
+  async function saveClient(e: React.FormEvent) {
+    e.preventDefault()
+    await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: clientId, ...editForm }),
+    })
+    setEditing(false)
+    // Reload client data
+    const res = await fetch('/api/clients')
+    const clients = await res.json()
+    setClient(Array.isArray(clients) ? clients.find((x: any) => x.id === clientId) : null)
+  }
+
+  async function deleteClient() {
+    if (!confirm('האם אתה בטוח שברצונך למחוק לקוח זה?')) return
+    await fetch(`/api/clients?id=${clientId}`, { method: 'DELETE' })
+    router.push('/clients')
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -119,11 +164,87 @@ export default function ClientDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{client.name}</h1>
           {client.industry && <p className="text-gray-500">{client.industry}</p>}
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={startEditing}
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-knesset-blue px-3 py-2 rounded-lg hover:bg-gray-100"
+          >
+            <Edit3 className="w-4 h-4" />
+            {labels.actions.edit}
+          </button>
+          <button
+            onClick={deleteClient}
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-red-600 px-3 py-2 rounded-lg hover:bg-gray-100"
+          >
+            <Trash2 className="w-4 h-4" />
+            {labels.actions.delete}
+          </button>
+        </div>
       </div>
 
+      {/* Edit Client Form */}
+      {editing && (
+        <form onSubmit={saveClient} className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
+          <h3 className="font-bold text-gray-800">עריכת לקוח</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">שם הלקוח *</label>
+              <input type="text" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} required className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">תעשייה</label>
+              <input type="text" value={editForm.industry} onChange={(e) => setEditForm({ ...editForm, industry: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">איש קשר</label>
+              <input type="text" value={editForm.contactName} onChange={(e) => setEditForm({ ...editForm, contactName: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">אימייל</label>
+              <input type="text" value={editForm.contactEmail} onChange={(e) => setEditForm({ ...editForm, contactEmail: e.target.value })} dir="ltr" className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">טלפון</label>
+              <input type="text" value={editForm.contactPhone} onChange={(e) => setEditForm({ ...editForm, contactPhone: e.target.value })} dir="ltr" className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">מילות מפתח (מופרדות בפסיקים)</label>
+              <input type="text" value={editForm.keywords} onChange={(e) => setEditForm({ ...editForm, keywords: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">סטטוס</label>
+              <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm">
+                {Object.entries(labels.client.statuses).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">תיאור</label>
+            <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-knesset-blue focus:border-transparent outline-none text-sm" rows={3} />
+          </div>
+          <div className="flex gap-3">
+            <button type="submit" className="bg-knesset-blue text-white px-6 py-2 rounded-lg text-sm hover:bg-blue-900">
+              {labels.actions.save}
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className="text-gray-500 px-4 py-2 text-sm">
+              {labels.actions.cancel}
+            </button>
+          </div>
+        </form>
+      )}
+
       {/* Client Info */}
-      {(client.description || client.keywords) && (
+      {!editing && (client.description || client.keywords || client.contactName || client.contactEmail || client.contactPhone) && (
         <div className="bg-white rounded-xl shadow-sm border p-5">
+          {(client.contactName || client.contactEmail || client.contactPhone) && (
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
+              {client.contactName && <span>איש קשר: {client.contactName}</span>}
+              {client.contactEmail && <span dir="ltr">{client.contactEmail}</span>}
+              {client.contactPhone && <span dir="ltr">{client.contactPhone}</span>}
+            </div>
+          )}
           {client.description && <p className="text-gray-700 mb-2">{client.description}</p>}
           {client.keywords && (
             <div className="flex flex-wrap gap-2 mt-3">

@@ -56,3 +56,43 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(client)
 }
+
+export async function PATCH(req: NextRequest) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const { id, ...data } = body
+
+  if (!id) return NextResponse.json({ error: 'Client ID required' }, { status: 400 })
+
+  const client = await prisma.client.update({
+    where: { id },
+    data: {
+      ...(data.name !== undefined && { name: data.name }),
+      ...(data.industry !== undefined && { industry: data.industry }),
+      ...(data.contactName !== undefined && { contactName: data.contactName }),
+      ...(data.contactEmail !== undefined && { contactEmail: data.contactEmail }),
+      ...(data.contactPhone !== undefined && { contactPhone: data.contactPhone }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.keywords !== undefined && { keywords: data.keywords }),
+      ...(data.status !== undefined && { status: data.status }),
+    },
+  })
+
+  return NextResponse.json(client)
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await getSession()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get('id')
+
+  if (!id) return NextResponse.json({ error: 'Client ID required' }, { status: 400 })
+
+  await prisma.client.delete({ where: { id } })
+
+  return NextResponse.json({ success: true })
+}
