@@ -11,6 +11,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
     industry: '',
@@ -26,22 +27,42 @@ export default function ClientsPage() {
   }, [])
 
   async function loadClients() {
-    const res = await fetch('/api/clients')
-    const data = await res.json()
-    setClients(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/clients')
+      const data = await res.json()
+      setClients(Array.isArray(data) ? data : [])
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function createClient(e: React.FormEvent) {
     e.preventDefault()
-    await fetch('/api/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    setForm({ name: '', industry: '', contactName: '', contactEmail: '', contactPhone: '', description: '', keywords: '' })
-    setShowForm(false)
-    loadClients()
+    setError('')
+    try {
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) {
+        let msg = 'שגיאה ביצירת לקוח'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {}
+        setError(msg)
+        return
+      }
+      setForm({ name: '', industry: '', contactName: '', contactEmail: '', contactPhone: '', description: '', keywords: '' })
+      setShowForm(false)
+      setError('')
+      loadClients()
+    } catch (err) {
+      setError('שגיאה בחיבור לשרת')
+    }
   }
 
   const filtered = clients.filter((c) =>
@@ -63,6 +84,12 @@ export default function ClientsPage() {
           <span>לקוח חדש</span>
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
       {/* New Client Form */}
       {showForm && (
