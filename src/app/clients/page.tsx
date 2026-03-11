@@ -26,22 +26,36 @@ export default function ClientsPage() {
   }, [])
 
   async function loadClients() {
-    const res = await fetch('/api/clients')
-    const data = await res.json()
-    setClients(Array.isArray(data) ? data : [])
-    setLoading(false)
+    try {
+      const res = await fetch('/api/clients')
+      const data = await res.json()
+      setClients(Array.isArray(data) ? data : [])
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function createClient(e: React.FormEvent) {
     e.preventDefault()
-    await fetch('/api/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    setForm({ name: '', industry: '', contactName: '', contactEmail: '', contactPhone: '', description: '', keywords: '' })
-    setShowForm(false)
-    loadClients()
+    try {
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || 'שגיאה ביצירת לקוח')
+        return
+      }
+      setForm({ name: '', industry: '', contactName: '', contactEmail: '', contactPhone: '', description: '', keywords: '' })
+      setShowForm(false)
+      loadClients()
+    } catch {
+      alert('שגיאה ביצירת לקוח')
+    }
   }
 
   const filtered = clients.filter((c) =>
