@@ -44,25 +44,6 @@ export default function ClientDetailPage() {
   })
 
   useEffect(() => {
-    loadData()
-  }, [clientId])
-
-  async function loadData() {
-    const [clientsRes, tasksRes, scrapedRes] = await Promise.all([
-      fetch('/api/clients'),
-      fetch(`/api/tasks?clientId=${clientId}`),
-      fetch(`/api/scrape?clientId=${clientId}`),
-    ])
-    const clients = await clientsRes.json()
-    const c = Array.isArray(clients) ? clients.find((x: any) => x.id === clientId) : null
-    setClient(c)
-    setTasks(Array.isArray(await tasksRes.json().catch(() => [])) ? await tasksRes.json().catch(() => []) : [])
-    setScraped(Array.isArray(await scrapedRes.json().catch(() => [])) ? await scrapedRes.json().catch(() => []) : [])
-    setLoading(false)
-  }
-
-  // Re-load properly
-  useEffect(() => {
     async function load() {
       try {
         const [clientsRes, tasksRes, scrapedRes] = await Promise.all([
@@ -76,7 +57,9 @@ export default function ClientDetailPage() {
         setClient(Array.isArray(clientsData) ? clientsData.find((x: any) => x.id === clientId) : null)
         setTasks(Array.isArray(tasksData) ? tasksData : [])
         setScraped(Array.isArray(scrapedData) ? scrapedData : [])
-      } catch {} finally {
+      } catch {
+        // ignore
+      } finally {
         setLoading(false)
       }
     }
