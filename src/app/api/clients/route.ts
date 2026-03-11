@@ -39,22 +39,41 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const userId = (session.user as any).id
 
-  const client = await prisma.client.create({
-    data: {
-      name: body.name,
-      industry: body.industry,
-      contactName: body.contactName,
-      contactEmail: body.contactEmail,
-      contactPhone: body.contactPhone,
-      description: body.description,
-      keywords: body.keywords,
-      users: {
-        create: { userId, role: 'lead' },
-      },
-    },
-  })
+  if (!body.name) {
+    return NextResponse.json({ error: 'שם הלקוח הוא שדה חובה' }, { status: 400 })
+  }
 
-  return NextResponse.json(client)
+  try {
+    // Verify the user exists in DB (JWT may have stale ID from before seeding)
+    const userExists = await prisma.user.findUnique({ where: { id: userId } })
+    if (!userExists) {
+      return NextResponse.json({ error: 'משתמש לא נמצא - יש להתנתק ולהתחבר מחדש' }, { status: 401 })
+    }
+
+    const client = await prisma.client.create({
+      data: {
+        name: body.name,
+        industry: body.industry || null,
+        contactName: body.contactName || null,
+        contactEmail: body.contactEmail || null,
+        contactPhone: body.contactPhone || null,
+        description: body.description || null,
+        keywords: body.keywords || null,
+        users: {
+          create: { userId, role: 'lead' },
+        },
+      },
+      include: {
+        _count: { select: { tasks: true } },
+        users: { include: { user: { select: { id: true, name: true } } } },
+      },
+    })
+
+    return NextResponse.json(client)
+  } catch (error) {
+    console.error('Error creating client:', error)
+    return NextResponse.json({ error: 'שגיאה ביצירת לקוח' }, { status: 500 })
+  }
 }
 
 export async function PATCH(req: NextRequest) {

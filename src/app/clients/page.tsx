@@ -11,6 +11,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     name: '',
     industry: '',
@@ -39,6 +40,7 @@ export default function ClientsPage() {
 
   async function createClient(e: React.FormEvent) {
     e.preventDefault()
+    setError('')
     try {
       const res = await fetch('/api/clients', {
         method: 'POST',
@@ -46,15 +48,20 @@ export default function ClientsPage() {
         body: JSON.stringify(form),
       })
       if (!res.ok) {
-        const data = await res.json()
-        alert(data.error || 'שגיאה ביצירת לקוח')
+        let msg = 'שגיאה ביצירת לקוח'
+        try {
+          const data = await res.json()
+          msg = data.error || msg
+        } catch {}
+        setError(msg)
         return
       }
       setForm({ name: '', industry: '', contactName: '', contactEmail: '', contactPhone: '', description: '', keywords: '' })
       setShowForm(false)
+      setError('')
       loadClients()
-    } catch {
-      alert('שגיאה ביצירת לקוח')
+    } catch (err) {
+      setError('שגיאה בחיבור לשרת')
     }
   }
 
@@ -77,6 +84,12 @@ export default function ClientsPage() {
           <span>לקוח חדש</span>
         </button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
       {/* New Client Form */}
       {showForm && (
