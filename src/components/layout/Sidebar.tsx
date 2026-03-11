@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Building2,
+  Shield,
 } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils/cn'
@@ -26,12 +27,16 @@ const navItems = [
   { href: '/dashboard/scraping', icon: Globe, label: labels.nav.scraping },
   { href: '/dashboard/ai', icon: Sparkles, label: labels.nav.ai },
   { href: '/profile', icon: User, label: labels.nav.profile },
+  { href: '/admin', icon: Shield, label: 'ניהול שדלנים', adminOnly: true },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const isAdmin = (session?.user as any)?.role === 'admin'
+
+  const visibleNavItems = navItems.filter((item) => !(item as any).adminOnly || isAdmin)
 
   return (
     <>
@@ -84,7 +89,7 @@ export function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 py-4 overflow-y-auto">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
             return (
               <Link
@@ -131,7 +136,7 @@ export function Sidebar() {
       {/* Mobile bottom navigation */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 mobile-nav">
         <div className="flex justify-around py-2">
-          {navItems.slice(0, 5).map((item) => {
+          {visibleNavItems.filter((i) => !(i as any).adminOnly).slice(0, 5).map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
             return (
               <Link
