@@ -11,6 +11,8 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
+  Newspaper,
+  ExternalLink,
 } from 'lucide-react'
 import { labels, formatRelativeDate, statusColors, priorityColors } from '@/lib/utils/hebrew'
 import { cn } from '@/lib/utils/cn'
@@ -54,7 +56,9 @@ export default function DashboardPage() {
   const pendingTasks = data.tasks.filter((t: any) => t.status === 'pending')
   const inProgressTasks = data.tasks.filter((t: any) => t.status === 'in_progress')
   const completedTasks = data.tasks.filter((t: any) => t.status === 'completed')
-  const recentScraped = data.scrapedItems.slice(0, 5)
+  const recentScraped = data.scrapedItems.filter((i: any) => i.source !== 'news').slice(0, 5)
+  const recentNews = data.scrapedItems.filter((i: any) => i.source === 'news').slice(0, 5)
+  const newsCount = data.scrapedItems.filter((i: any) => i.source === 'news').length
 
   if (loading) {
     return (
@@ -72,7 +76,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           icon={Users}
           label="לקוחות פעילים"
@@ -94,8 +98,14 @@ export default function DashboardPage() {
         <StatCard
           icon={Globe}
           label="עדכוני מידע"
-          value={data.scrapedItems.length}
+          value={data.scrapedItems.length - newsCount}
           color="purple"
+        />
+        <StatCard
+          icon={Newspaper}
+          label="כתבות חדשות"
+          value={newsCount}
+          color="orange"
         />
       </div>
 
@@ -117,6 +127,43 @@ export default function DashboardPage() {
                   {labels.task.statuses[task.status as keyof typeof labels.task.statuses]}
                 </span>
               </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent News Articles */}
+      {recentNews.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <Newspaper className="w-5 h-5 text-orange-500" />
+              כתבות חדשות אחרונות
+            </h2>
+            <Link href="/dashboard/scraping" className="text-sm text-knesset-blue hover:underline">
+              הצג הכל
+            </Link>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {recentNews.map((item: any) => (
+              <a
+                key={item.id}
+                href={item.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 rounded-lg border border-orange-100 bg-orange-50/30 hover:bg-orange-50 transition-colors"
+              >
+                <p className="text-sm font-medium text-gray-900 line-clamp-2 flex items-start gap-1">
+                  {item.title}
+                  <ExternalLink className="w-3 h-3 flex-shrink-0 mt-0.5 text-gray-400" />
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  {item.client && (
+                    <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">{item.client.name}</span>
+                  )}
+                  <span className="text-xs text-gray-300">{formatRelativeDate(item.createdAt)}</span>
+                </div>
+              </a>
             ))}
           </div>
         </div>
@@ -226,6 +273,7 @@ function StatCard({
     yellow: 'bg-yellow-50 text-yellow-600',
     green: 'bg-green-50 text-green-600',
     purple: 'bg-purple-50 text-purple-600',
+    orange: 'bg-orange-50 text-orange-600',
   }
 
   return (

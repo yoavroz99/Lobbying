@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
-import { runScraper, summarizeScrapedItem } from '@/lib/scraper/scraper'
+import { runScraper, summarizeScrapedItem, rematchUnassignedItems } from '@/lib/scraper/scraper'
 
 export async function GET(req: NextRequest) {
   const session = await getSession()
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       client: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: 'desc' },
-    take: 100,
+    take: 200,
   })
 
   return NextResponse.json(items)
@@ -41,6 +41,11 @@ export async function POST(req: NextRequest) {
   if (body.action === 'summarize' && body.itemId) {
     const summary = await summarizeScrapedItem(body.itemId)
     return NextResponse.json({ summary })
+  }
+
+  if (body.action === 'rematch') {
+    const matched = await rematchUnassignedItems()
+    return NextResponse.json({ matched })
   }
 
   return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

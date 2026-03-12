@@ -11,6 +11,8 @@ import {
   Sparkles,
   Edit3,
   Trash2,
+  Newspaper,
+  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { labels, statusColors, priorityColors, formatRelativeDate } from '@/lib/utils/hebrew'
@@ -22,6 +24,7 @@ export default function ClientDetailPage() {
   const [client, setClient] = useState<any>(null)
   const [tasks, setTasks] = useState<any[]>([])
   const [scraped, setScraped] = useState<any[]>([])
+  const [newsItems, setNewsItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showTaskForm, setShowTaskForm] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -56,7 +59,9 @@ export default function ClientDetailPage() {
         const scrapedData = await scrapedRes.json()
         setClient(Array.isArray(clientsData) ? clientsData.find((x: any) => x.id === clientId) : null)
         setTasks(Array.isArray(tasksData) ? tasksData : [])
-        setScraped(Array.isArray(scrapedData) ? scrapedData : [])
+        const allScraped = Array.isArray(scrapedData) ? scrapedData : []
+        setScraped(allScraped.filter((item: any) => item.source !== 'news'))
+        setNewsItems(allScraped.filter((item: any) => item.source === 'news'))
       } catch {
         // ignore
       } finally {
@@ -384,6 +389,50 @@ export default function ClientDetailPage() {
           ))}
           {scraped.length === 0 && (
             <p className="text-center text-gray-400 py-4">אין עדכונים רלוונטיים</p>
+          )}
+        </div>
+      </div>
+
+      {/* News Articles for this client */}
+      <div className="bg-white rounded-xl shadow-sm border p-5">
+        <h2 className="font-bold text-gray-900 flex items-center gap-2 mb-4">
+          <Newspaper className="w-5 h-5 text-orange-500" />
+          כתבות חדשות רלוונטיות ({newsItems.length})
+        </h2>
+        <div className="space-y-3">
+          {newsItems.map((item) => (
+            <div key={item.id} className="p-3 rounded-lg border border-orange-100 bg-orange-50/30 hover:bg-orange-50 transition-colors">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <a
+                    href={item.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-gray-900 hover:text-knesset-blue hover:underline flex items-center gap-1"
+                  >
+                    {item.title}
+                    <ExternalLink className="w-3 h-3 flex-shrink-0 text-gray-400" />
+                  </a>
+                  {item.content && item.content !== item.title && (
+                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.content}</p>
+                  )}
+                </div>
+                {item.relevance && (
+                  <span className={cn(
+                    'text-xs px-2 py-0.5 rounded-full flex-shrink-0',
+                    item.relevance > 0.5 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                  )}>
+                    {Math.round(item.relevance * 100)}%
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {labels.scrape.sources.news} • {formatRelativeDate(item.createdAt)}
+              </p>
+            </div>
+          ))}
+          {newsItems.length === 0 && (
+            <p className="text-center text-gray-400 py-4">אין כתבות חדשות. הפעל סריקה לאיסוף חדשות.</p>
           )}
         </div>
       </div>
