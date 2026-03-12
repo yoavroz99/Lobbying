@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ response, requestId: aiRequest.id })
   } catch (error) {
+    console.error('AI generation error:', error)
     await prisma.aIRequest.update({
       where: { id: aiRequest.id },
       data: { status: 'failed' },
