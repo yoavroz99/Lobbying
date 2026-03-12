@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Globe, RefreshCw, ExternalLink, Sparkles, Filter } from 'lucide-react'
+import { Globe, RefreshCw, ExternalLink, Sparkles, Filter, Newspaper } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { labels, formatRelativeDate } from '@/lib/utils/hebrew'
 
@@ -36,7 +36,7 @@ export default function ScrapingPage() {
       // Reload items
       const itemsRes = await fetch('/api/scrape')
       setItems(await itemsRes.json())
-      alert(`סריקה הושלמה: ${result.added} פריטים חדשים`)
+      alert(`סריקה הושלמה: ${result.added} פריטים חדשים${result.news ? ` (${result.news} כתבות)` : ''}`)
     } catch {
       alert('שגיאה בסריקה')
     } finally {
@@ -87,7 +87,7 @@ export default function ScrapingPage() {
       </div>
 
       {/* Source stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {Object.entries(labels.scrape.sources).map(([key, label]) => {
           const count = items.filter((i) => i.source === key).length
           return (
@@ -136,7 +136,11 @@ export default function ScrapingPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                    <span className={cn(
+                      'text-xs px-2 py-0.5 rounded flex items-center gap-1',
+                      item.source === 'news' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'
+                    )}>
+                      {item.source === 'news' && <Newspaper className="w-3 h-3" />}
                       {labels.scrape.sources[item.source as keyof typeof labels.scrape.sources]}
                     </span>
                     {item.committee && (
@@ -145,6 +149,14 @@ export default function ScrapingPage() {
                     {item.client && (
                       <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded">
                         {item.client.name}
+                      </span>
+                    )}
+                    {item.relevance != null && item.relevance > 0 && (
+                      <span className={cn(
+                        'text-xs px-2 py-0.5 rounded',
+                        item.relevance > 0.5 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                      )}>
+                        רלוונטיות: {Math.round(item.relevance * 100)}%
                       </span>
                     )}
                   </div>

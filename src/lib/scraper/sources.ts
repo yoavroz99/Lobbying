@@ -6,7 +6,7 @@ export interface ScrapingSource {
   name: string
   nameHe: string
   baseUrl: string
-  type: 'knesset_committee' | 'knesset_plenum' | 'gov_decision' | 'legislation'
+  type: 'knesset_committee' | 'knesset_plenum' | 'gov_decision' | 'legislation' | 'news'
   selectors: {
     itemList: string
     title: string
@@ -80,8 +80,20 @@ export const KNESSET_API = {
   base: 'https://knesset.gov.il/Odata/ParliamentInfo.svc',
   endpoints: {
     committees: '/KNS_Committee?$format=json',
-    committeeSessions: '/KNS_CommitteeSessions?$format=json&$orderby=StartDate desc&$top=50',
-    bills: '/KNS_Bill?$format=json&$orderby=LastUpdatedDate desc&$top=50',
+    committeeSessions: '/KNS_CommitteeSessions?$format=json&$orderby=StartDate%20desc&$top=50',
+    bills: '/KNS_Bill?$format=json&$orderby=LastUpdatedDate%20desc&$top=50',
     members: '/KNS_Person?$format=json',
   },
+} as const
+
+// Gov.il API for government decisions and publications
+export const GOV_IL_API = {
+  // Gov.il exposes a public search/publications API
+  searchUrl: 'https://www.gov.il/he/api/PublicationApi/Index',
+  decisionsUrl: 'https://www.gov.il/he/api/DecisionApi/Index',
+} as const
+
+// Google News RSS for Hebrew news search
+export const NEWS_SOURCES = {
+  googleNewsRss: 'https://news.google.com/rss/search',
 } as const

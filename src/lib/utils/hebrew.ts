@@ -49,6 +49,7 @@ export const labels = {
       knesset_plenum: 'מליאת הכנסת',
       gov_decision: 'החלטות ממשלה',
       legislation: 'חקיקה',
+      news: 'חדשות',
     },
   },
   user: {
