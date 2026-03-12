@@ -79,16 +79,14 @@ async function main() {
     },
   })
 
-  // Link yoav as lead on the client
-  await prisma.userClient.upsert({
-    where: { userId_clientId: { userId: yoav.id, clientId: sampleClient.id } },
-    update: {},
-    create: {
-      userId: yoav.id,
-      clientId: sampleClient.id,
-      role: 'lead',
-    },
-  })
+  // Link yoav as lead, all other users as members
+  for (const [user, role] of [[yoav, 'lead'], [gal, 'member'], [moshe, 'member'], [matan, 'member']] as const) {
+    await prisma.userClient.upsert({
+      where: { userId_clientId: { userId: user.id, clientId: sampleClient.id } },
+      update: {},
+      create: { userId: user.id, clientId: sampleClient.id, role },
+    })
+  }
 
   // Seed sample scraped data (realistic examples from real Israeli sources)
   const sampleScrapedItems = [
