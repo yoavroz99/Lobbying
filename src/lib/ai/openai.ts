@@ -10,9 +10,10 @@ export function getOpenAIClient(): OpenAI {
 
   if (apiKey && endpoint) {
     // Azure OpenAI
+    const base = endpoint.replace(/\/+$/, '')
     client = new OpenAI({
       apiKey,
-      baseURL: `${endpoint}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT}`,
+      baseURL: `${base}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT}`,
       defaultQuery: { 'api-version': process.env.AZURE_OPENAI_API_VERSION || '2024-02-01' },
       defaultHeaders: { 'api-key': apiKey },
     })
