@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { User, Save, Shield } from 'lucide-react'
 import { labels } from '@/lib/utils/hebrew'
+import IntegrationStatus from '@/components/integrations/IntegrationStatus'
 
 export default function ProfilePage() {
   const { data: session, update } = useSession()
@@ -212,6 +213,9 @@ export default function ProfilePage() {
           עדכן סיסמה
         </button>
       </form>
+
+      {/* Integrations */}
+      <IntegrationStatus />
 
       {/* Account info */}
       <div className="bg-gray-50 rounded-xl p-5 text-sm text-gray-500">

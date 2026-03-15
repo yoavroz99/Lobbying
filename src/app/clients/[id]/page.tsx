@@ -13,9 +13,12 @@ import {
   Trash2,
   Newspaper,
   ExternalLink,
+  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils/cn'
 import { labels, statusColors, priorityColors, formatRelativeDate } from '@/lib/utils/hebrew'
+import DigestEmailDialog from '@/components/integrations/DigestEmailDialog'
+import DriveFolderManager from '@/components/integrations/DriveFolderManager'
 
 export default function ClientDetailPage() {
   const params = useParams()
@@ -45,6 +48,12 @@ export default function ClientDetailPage() {
     priority: 'medium',
     dueDate: '',
   })
+  const [showDigestDialog, setShowDigestDialog] = useState(false)
+  const [integrationStatus, setIntegrationStatus] = useState<{ microsoft: { connected: boolean }; google: { connected: boolean } } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/integrations/status').then(r => r.json()).then(setIntegrationStatus).catch(() => {})
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -443,7 +452,7 @@ export default function ClientDetailPage() {
           <Sparkles className="w-5 h-5 text-knesset-gold" />
           כלי AI ללקוח
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <Link
             href={`/dashboard/ai?type=summarize&clientId=${clientId}`}
             className="bg-white rounded-lg p-4 text-center hover:shadow-md transition-shadow"
@@ -462,8 +471,36 @@ export default function ClientDetailPage() {
           >
             <p className="text-sm font-medium">צור תוכנית אסטרטגית</p>
           </Link>
+          <button
+            onClick={() => setShowDigestDialog(true)}
+            className={cn(
+              'bg-white rounded-lg p-4 text-center hover:shadow-md transition-shadow flex flex-col items-center gap-1',
+              !integrationStatus?.microsoft.connected && 'opacity-60'
+            )}
+            disabled={!integrationStatus?.microsoft.connected}
+            title={!integrationStatus?.microsoft.connected ? 'חבר Outlook בדף הפרופיל' : undefined}
+          >
+            <Mail className="w-4 h-4 text-blue-600" />
+            <p className="text-sm font-medium">שלח דייג׳סט</p>
+          </button>
         </div>
       </div>
+
+      {/* Google Drive Folders */}
+      <DriveFolderManager
+        clientId={clientId}
+        googleConnected={integrationStatus?.google.connected || false}
+      />
+
+      {/* Digest Email Dialog */}
+      {showDigestDialog && (
+        <DigestEmailDialog
+          clientId={clientId}
+          clientName={client.name}
+          contactEmail={client.contactEmail}
+          onClose={() => setShowDigestDialog(false)}
+        />
+      )}
     </div>
   )
 }
