@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { generateCompletion } from '@/lib/ai/openai'
 import { SYSTEM_PROMPTS, type AITaskType } from '@/lib/ai/prompts'
+import { getClientDriveContext } from '@/lib/integrations/google/sync'
 
 export async function POST(req: NextRequest) {
   const session = await getSession()
@@ -32,7 +33,16 @@ export async function POST(req: NextRequest) {
   })
 
   try {
-    const response = await generateCompletion(systemPrompt, prompt)
+    // Inject Drive document context if client has linked folders
+    let enrichedPrompt = prompt
+    if (clientId) {
+      const driveContext = await getClientDriveContext(clientId)
+      if (driveContext) {
+        enrichedPrompt = driveContext + prompt
+      }
+    }
+
+    const response = await generateCompletion(systemPrompt, enrichedPrompt)
 
     // Update AI request with response
     await prisma.aIRequest.update({

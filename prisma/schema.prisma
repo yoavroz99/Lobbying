@@ -22,6 +22,8 @@ model User {
   clients       UserClient[]
   tasks         Task[]
   aiRequests    AIRequest[]
+  oauthAccounts OAuthAccount[]
+  digestEmails  DigestEmail[]
 }
 
 model Client {
@@ -39,6 +41,8 @@ model Client {
   users         UserClient[]
   tasks         Task[]
   scrapedItems  ScrapedItem[]
+  driveFolders  ClientDriveFolder[]
+  digestEmails  DigestEmail[]
 }
 
 model UserClient {
@@ -99,4 +103,65 @@ model AIRequest {
   userId      String
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id])
+}
+
+model OAuthAccount {
+  id                String    @id @default(cuid())
+  userId            String
+  provider          String    // microsoft | google
+  providerAccountId String
+  accessToken       String
+  refreshToken      String?
+  expiresAt         DateTime?
+  scope             String?
+  tokenType         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+}
+
+model ClientDriveFolder {
+  id            String    @id @default(cuid())
+  clientId      String
+  folderId      String    // Google Drive folder ID
+  folderName    String
+  lastSyncedAt  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  documents     DriveDocument[]
+
+  @@unique([clientId, folderId])
+}
+
+model DriveDocument {
+  id            String    @id @default(cuid())
+  folderId      String
+  driveFileId   String    // Google Drive file ID
+  fileName      String
+  mimeType      String
+  extractedText String?
+  lastModified  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  folder        ClientDriveFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, driveFileId])
+}
+
+model DigestEmail {
+  id                String    @id @default(cuid())
+  clientId          String
+  userId            String
+  subject           String
+  htmlBody          String
+  recipients        String    // comma-separated email addresses
+  status            String    @default("draft") // draft | sent | failed
+  outlookMessageId  String?
+  sentAt            DateTime?
+  createdAt         DateTime  @default(now())
+  client            Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id])
 }
